@@ -166,3 +166,22 @@ resource "google_compute_instance" "mysqldb" {
 resource "random_id" "db_name_suffix" {
   byte_length = 4
 }
+
+## CLOUD SQL
+resource "google_sql_database_instance" "cloudsql" {
+  name             = "web-app-db-${random_id.db_name_suffix.hex}"
+  database_version = "MYSQL_8_0"
+  region           = "us-central1"
+
+  settings {
+    tier = "db-e2-micro"
+  }
+  deletion_protection = false
+}
+
+## CLOUD SQL USER
+resource "google_sql_user" "users" {
+  name     = var.dbusername
+  instance = google_sql_database_instance.cloudsql.name
+  password = var.dbpassword
+}
