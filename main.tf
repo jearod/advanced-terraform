@@ -80,9 +80,18 @@ resource "google_compute_instance" "nginx_instance" {
   }
 }
 
+## BUCKETS
+resource "google_storage_bucket" "environment_buckets" {
+  for_each = toset(var.environment_list)
+  name = "${lower(each.key)}_bucket_jearod"
+  location = "US"
+  versioning {
+    enabled = true
+  }
+}
 ## WEB-INSTANCES
 resource "google_compute_instance" "web-instances" {
-  count        = 3
+  count        = 2
   name         = "web${count.index + 1}"
   machine_type = var.environment_machine_type[var.target_environment]
  
@@ -98,6 +107,25 @@ resource "google_compute_instance" "web-instances" {
 
   network_interface {
     # A default network is created for all GCP projects
+    network = data.google_compute_network.default.self_link
+    subnetwork = google_compute_subnetwork.subnet-1.self_link
+  }
+}
+
+## WEBSERVERS-MAP
+resource "google_compute_instance" "web-map-intances" {
+  for_each     = var.environment_instance_settings
+  name         = "web-${lower(each.key)}"
+  machine_type = each.value.machine_type
+  labels       = each.value.labels
+
+  boot_disk {
+    initialize_params {
+      image = var.boot_disk_image
+    }
+  }
+
+  network_interface {
     network = data.google_compute_network.default.self_link
     subnetwork = google_compute_subnetwork.subnet-1.self_link
   }
